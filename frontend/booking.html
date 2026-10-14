@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking - SportConnect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-futbol"></i> SportConnect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="facilities.html">Facilities</a>
+                    </li>
+                    <li class="nav-item" id="authLinks">
+                        <a class="nav-link" href="login.html">Login</a>
+                        <a class="nav-link" href="signup.html">Sign Up</a>
+                    </li>
+                    <li class="nav-item" id="userLinks" style="display: none;">
+                        <a class="nav-link" href="my-bookings.html">My Bookings</a>
+                        <a class="nav-link" href="profile.html">Profile</a>
+                        <a class="nav-link" href="#" onclick="logout()">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Booking Section -->
+    <section class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card p-4" id="bookingContainer">
+                    <div class="text-center">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2024 SportConnect. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        window.onload = function() {
+            checkAuth();
+            loadBookingDetails();
+        };
+
+        function loadBookingDetails() {
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const facilityId = urlParams.get('facility_id');
+            const slotId = urlParams.get('slot_id');
+            const date = urlParams.get('date');
+            const startTime = urlParams.get('start_time');
+            const endTime = urlParams.get('end_time');
+            const amount = urlParams.get('amount');
+
+            if (!facilityId || !slotId || !date) {
+                window.location.href = 'facilities.html';
+                return;
+            }
+
+            // Get facility details
+            fetch(`/api/facilities/${facilityId}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayBookingSummary(data.facility, slotId, date, startTime, endTime, amount);
+                })
+                .catch(error => {
+                    console.error('Error loading facility:', error);
+                    document.getElementById('bookingContainer').innerHTML = 
+                        '<div class="alert alert-danger">Failed to load booking details</div>';
+                });
+        }
+
+        function displayBookingSummary(facility, slotId, date, startTime, endTime, amount) {
+            const container = document.getElementById('bookingContainer');
+            const user = JSON.parse(localStorage.getItem('user'));
+
+            container.innerHTML = `
+                <h2 class="mb-4" style="color: var(--dark-blue); font-weight: 700;">Booking Summary</h2>
+                
+                <div class="booking-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Facility</span>
+                        <span class="summary-value">${facility.name}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Location</span>
+                        <span class="summary-value">${facility.location}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Sport Type</span>
+                        <span class="summary-value">${facility.sport_type}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Date</span>
+                        <span class="summary-value">${new Date(date).toLocaleDateString()}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Time</span>
+                        <span class="summary-value">${formatTime(startTime)} - ${formatTime(endTime)}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Booked By</span>
+                        <span class="summary-value">${user.name}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Email</span>
+                        <span class="summary-value">${user.email}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Amount</span>
+                        <span class="summary-value total-amount">₹${amount}</span>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    By confirming this booking, you agree to the facility's rules and guidelines.
+                </div>
+                
+                <div class="d-flex gap-3">
+                    <button class="btn btn-primary flex-grow-1" onclick="confirmBooking()">
+                        <i class="fas fa-check"></i> Confirm Booking
+                    </button>
+                    <button class="btn btn-outline flex-grow-1" onclick="cancelBooking()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            `;
+
+            window.bookingData = {
+                facility_id: facility.id,
+                slot_id: slotId,
+                date: date
+            };
+        }
+
+        function formatTime(time) {
+            const [hours, minutes] = time.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 || 12;
+            return `${hour12}:${minutes} ${ampm}`;
+        }
+
+        function confirmBooking() {
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                alert('Please login to confirm booking');
+                return;
+            }
+
+            fetch('/api/bookings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(window.bookingData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                displayBookingConfirmation(data.booking, data.sms_status);
+            })
+            .catch(error => {
+                console.error('Booking error:', error);
+                alert('Failed to confirm booking. The slot may have been booked by someone else.');
+            });
+        }
+
+        function displayBookingConfirmation(booking, smsStatus) {
+            const container = document.getElementById('bookingContainer');
+            
+            // Determine SMS message based on status
+            let smsMessage = '';
+            if (smsStatus === 'sent') {
+                smsMessage = '<p class="text-success mb-4"><i class="fas fa-sms"></i> A confirmation SMS has been sent to your registered mobile number.</p>';
+            } else if (smsStatus === 'skipped') {
+                smsMessage = '<p class="text-warning mb-4"><i class="fas fa-exclamation-triangle"></i> No phone number on file. SMS not sent.</p>';
+            } else {
+                smsMessage = '<p class="text-warning mb-4"><i class="fas fa-exclamation-triangle"></i> Your stadium booking was successful, but the confirmation SMS could not be sent.</p>';
+            }
+            
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <div style="font-size: 4rem; color: var(--success);" class="mb-3">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="mb-3" style="color: var(--dark-green); font-weight: 700;">Booking Confirmed!</h2>
+                    <p class="text-muted mb-2">Your stadium has been successfully booked.</p>
+                    ${smsMessage}
+                    
+                    <div class="card p-4 mb-4" style="max-width: 400px; margin: 0 auto;">
+                        <h5 class="mb-3">Booking Details</h5>
+                        <p><strong>Booking ID:</strong> ${booking.booking_id}</p>
+                        <p><strong>Facility:</strong> ${booking.facility_name}</p>
+                        <p><strong>Date:</strong> ${new Date(booking.date).toLocaleDateString()}</p>
+                        <p><strong>Time:</strong> ${formatTime(booking.start_time)} - ${formatTime(booking.end_time)}</p>
+                        <p><strong>Amount:</strong> ₹${booking.amount}</p>
+                        <p><strong>Status:</strong> <span class="badge badge-success">${booking.booking_status}</span></p>
+                    </div>
+                    
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="my-bookings.html" class="btn btn-primary">
+                            <i class="fas fa-list"></i> View My Bookings
+                        </a>
+                        <a href="index.html" class="btn btn-outline">
+                            <i class="fas fa-home"></i> Back to Home
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function cancelBooking() {
+            if (confirm('Are you sure you want to cancel this booking?')) {
+                window.location.href = `facility-details.html?id=${window.bookingData.facility_id}`;
+            }
+        }
+    </script>
+</body>
+</html>

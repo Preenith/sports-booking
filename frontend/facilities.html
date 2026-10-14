@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facilities - SportConnect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-futbol"></i> SportConnect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="facilities.html">Facilities</a>
+                    </li>
+                    <li class="nav-item" id="authLinks">
+                        <a class="nav-link" href="login.html">Login</a>
+                        <a class="nav-link" href="signup.html">Sign Up</a>
+                    </li>
+                    <li class="nav-item" id="userLinks" style="display: none;">
+                        <a class="nav-link" href="my-bookings.html">My Bookings</a>
+                        <a class="nav-link" href="profile.html">Profile</a>
+                        <a class="nav-link" href="#" onclick="logout()">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Search and Filter Section -->
+    <section class="container my-5">
+        <h2 class="mb-4" style="color: var(--dark-blue); font-weight: 700;">Explore Facilities</h2>
+        
+        <div class="card p-4 mb-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="searchInput" 
+                           placeholder="Search facilities...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="sportFilter">
+                        <option value="">All Sports</option>
+                        <option value="football">Football</option>
+                        <option value="cricket">Cricket</option>
+                        <option value="basketball">Basketball</option>
+                        <option value="badminton">Badminton</option>
+                        <option value="tennis">Tennis</option>
+                        <option value="multi-sport">Multi-Sport</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" id="locationFilter" 
+                           placeholder="Filter by location...">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" onclick="applyFilters()">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="facilitiesContainer">
+            <div class="text-center">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2024 SportConnect. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        window.onload = function() {
+            checkAuth();
+            loadFacilities();
+            
+            // Get URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const search = urlParams.get('search');
+            const sportType = urlParams.get('sport_type');
+            
+            if (search) {
+                document.getElementById('searchInput').value = search;
+            }
+            if (sportType) {
+                document.getElementById('sportFilter').value = sportType;
+            }
+            
+            if (search || sportType) {
+                applyFilters();
+            }
+        };
+
+        function loadFacilities() {
+            fetch('/api/facilities')
+                .then(response => response.json())
+                .then(data => {
+                    displayFacilities(data.facilities);
+                })
+                .catch(error => {
+                    console.error('Error loading facilities:', error);
+                    document.getElementById('facilitiesContainer').innerHTML = 
+                        '<div class="alert alert-danger">Failed to load facilities</div>';
+                });
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value;
+            const sportType = document.getElementById('sportFilter').value;
+            const location = document.getElementById('locationFilter').value;
+            
+            let url = '/api/facilities?';
+            const params = [];
+            
+            if (search) params.push(`search=${encodeURIComponent(search)}`);
+            if (sportType) params.push(`sport_type=${sportType}`);
+            if (location) params.push(`location=${encodeURIComponent(location)}`);
+            
+            url += params.join('&');
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    displayFacilities(data.facilities);
+                })
+                .catch(error => {
+                    console.error('Error filtering facilities:', error);
+                    document.getElementById('facilitiesContainer').innerHTML = 
+                        '<div class="alert alert-danger">Failed to filter facilities</div>';
+                });
+        }
+
+        function displayFacilities(facilities) {
+            const container = document.getElementById('facilitiesContainer');
+            
+            if (facilities.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i> No facilities found matching your criteria.
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="row g-4">
+                    ${facilities.map(facility => `
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 fade-in">
+                                <img src="${facility.image || 'https://via.placeholder.com/400x200'}" 
+                                     class="card-img-top" alt="${facility.name}">
+                                <div class="card-body">
+                                    <h5 class="card-title">${facility.name}</h5>
+                                    <p class="card-text">
+                                        <span class="location-tag">
+                                            <i class="fas fa-map-marker-alt"></i> ${facility.location}
+                                        </span>
+                                    </p>
+                                    <p class="card-text text-muted small">${facility.description || 'No description available'}</p>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="badge badge-info">${facility.sport_type}</span>
+                                        <div class="rating-stars">
+                                            ${'★'.repeat(Math.round(facility.avg_rating))}${'☆'.repeat(5 - Math.round(facility.avg_rating))}
+                                            <small>(${facility.review_count})</small>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="price-tag">₹${facility.price_per_hour}/hr</span>
+                                        <a href="facility-details.html?id=${facility.id}" class="btn btn-primary">View Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

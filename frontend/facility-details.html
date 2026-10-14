@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facility Details - SportConnect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-futbol"></i> SportConnect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="facilities.html">Facilities</a>
+                    </li>
+                    <li class="nav-item" id="authLinks">
+                        <a class="nav-link" href="login.html">Login</a>
+                        <a class="nav-link" href="signup.html">Sign Up</a>
+                    </li>
+                    <li class="nav-item" id="userLinks" style="display: none;">
+                        <a class="nav-link" href="my-bookings.html">My Bookings</a>
+                        <a class="nav-link" href="profile.html">Profile</a>
+                        <a class="nav-link" href="#" onclick="logout()">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Facility Details -->
+    <section class="container my-5" id="facilityDetails">
+        <div class="text-center">
+            <div class="spinner"></div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2024 SportConnect. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        window.onload = function() {
+            checkAuth();
+            loadFacilityDetails();
+        };
+
+        function loadFacilityDetails() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const facilityId = urlParams.get('id');
+            const dateParam = urlParams.get('date');
+
+            if (!facilityId) {
+                window.location.href = 'facilities.html';
+                return;
+            }
+
+            fetch(`/api/facilities/${facilityId}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayFacilityDetails(data.facility, data.reviews, dateParam);
+                })
+                .catch(error => {
+                    console.error('Error loading facility:', error);
+                    document.getElementById('facilityDetails').innerHTML = 
+                        '<div class="alert alert-danger">Failed to load facility details</div>';
+                });
+        }
+
+        function displayFacilityDetails(facility, reviews, dateParam) {
+            const container = document.getElementById('facilityDetails');
+            
+            container.innerHTML = `
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card mb-4">
+                            <img src="${facility.image || 'https://via.placeholder.com/800x400'}" 
+                                 class="card-img-top" alt="${facility.name}" style="height: 400px; object-fit: cover;">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h2 class="mb-2" style="color: var(--dark-blue); font-weight: 700;">${facility.name}</h2>
+                                        <p class="mb-2">
+                                            <span class="location-tag">
+                                                <i class="fas fa-map-marker-alt"></i> ${facility.location}
+                                            </span>
+                                        </p>
+                                        <span class="badge badge-info">${facility.sport_type}</span>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="rating-stars">
+                                            ${'★'.repeat(Math.round(facility.avg_rating))}${'☆'.repeat(5 - Math.round(facility.avg_rating))}
+                                        </div>
+                                        <small class="text-muted">${facility.review_count} reviews</small>
+                                    </div>
+                                </div>
+                                
+                                <h5 class="mt-4 mb-2" style="color: var(--dark-blue);">Description</h5>
+                                <p class="text-muted">${facility.description || 'No description available'}</p>
+                                
+                                <h5 class="mt-4 mb-2" style="color: var(--dark-blue);">Price</h5>
+                                <p class="price-tag">₹${facility.price_per_hour} per hour</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Reviews Section -->
+                        <div class="card p-4">
+                            <h4 class="mb-3" style="color: var(--dark-blue);">Reviews</h4>
+                            ${reviews.length > 0 ? reviews.map(review => `
+                                <div class="border-bottom pb-3 mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>${review.user_name}</strong>
+                                        <div class="rating-stars">
+                                            ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                                        </div>
+                                    </div>
+                                    <p class="text-muted mb-0 mt-2">${review.comment || 'No comment'}</p>
+                                </div>
+                            `).join('') : '<p class="text-muted">No reviews yet.</p>'}
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="card p-4 sticky-top" style="top: 20px;">
+                            <h4 class="mb-3" style="color: var(--dark-blue);">Book Now</h4>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Select Date</label>
+                                <input type="date" class="form-control" id="bookingDate" 
+                                       value="${dateParam || ''}" min="${new Date().toISOString().split('T')[0]}">
+                            </div>
+                            
+                            <button class="btn btn-primary w-100" onclick="checkAvailability()">
+                                <i class="fas fa-calendar-check"></i> Check Availability
+                            </button>
+                            
+                            <div id="timeSlotsContainer" class="mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Store facility ID for booking
+            window.currentFacilityId = facility.id;
+            window.currentFacilityPrice = facility.price_per_hour;
+        }
+
+        function checkAvailability() {
+            const date = document.getElementById('bookingDate').value;
+            
+            if (!date) {
+                alert('Please select a date');
+                return;
+            }
+
+            const container = document.getElementById('timeSlotsContainer');
+            container.innerHTML = '<div class="spinner"></div>';
+
+            fetch(`/api/facilities/${window.currentFacilityId}/availability?date=${date}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayTimeSlots(data.slots, date);
+                })
+                .catch(error => {
+                    console.error('Error checking availability:', error);
+                    container.innerHTML = '<div class="alert alert-danger">Failed to check availability</div>';
+                });
+        }
+
+        function displayTimeSlots(slots, date) {
+            const container = document.getElementById('timeSlotsContainer');
+            
+            if (slots.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No time slots available for this date.</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <h5 class="mb-3">Available Time Slots</h5>
+                <div class="time-slots-container">
+                    ${slots.map(slot => `
+                        <div class="time-slot ${slot.status}" 
+                             onclick="${slot.status === 'available' ? `selectSlot(${slot.id}, '${date}', '${slot.start_time}', '${slot.end_time}')` : ''}">
+                            <div class="fw-bold">${formatTime(slot.start_time)}</div>
+                            <div class="small">to ${formatTime(slot.end_time)}</div>
+                            <div class="small mt-1">${slot.status.charAt(0).toUpperCase() + slot.status.slice(1)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function formatTime(time) {
+            const [hours, minutes] = time.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 || 12;
+            return `${hour12}:${minutes} ${ampm}`;
+        }
+
+        function selectSlot(slotId, date, startTime, endTime) {
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                alert('Please login to book a slot');
+                window.location.href = `login.html?redirect=booking.html?facility_id=${window.currentFacilityId}&slot_id=${slotId}&date=${date}`;
+                return;
+            }
+
+            window.location.href = `booking.html?facility_id=${window.currentFacilityId}&slot_id=${slotId}&date=${date}&start_time=${startTime}&end_time=${endTime}&amount=${window.currentFacilityPrice}`;
+        }
+    </script>
+</body>
+</html>

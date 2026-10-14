@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SportConnect - Book Your Favourite Sports Ground</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-futbol"></i> SportConnect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="facilities.html">Facilities</a>
+                    </li>
+                    <li class="nav-item" id="authLinks">
+                        <a class="nav-link" href="login.html">Login</a>
+                        <a class="nav-link" href="signup.html">Sign Up</a>
+                    </li>
+                    <li class="nav-item" id="userLinks" style="display: none;">
+                        <a class="nav-link" href="my-bookings.html">My Bookings</a>
+                        <a class="nav-link" href="profile.html">Profile</a>
+                        <a class="nav-link" href="#" onclick="logout()">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <h1 class="hero-title">Book Your Favourite Sports Ground or Court</h1>
+            <p class="hero-subtitle">Discover and book nearby sports facilities with real-time availability</p>
+            
+            <div class="search-container">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search by sport, location, or facility name...">
+                <button class="search-btn" onclick="searchFacilities()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sports Categories -->
+    <section class="container my-5">
+        <h2 class="text-center mb-4" style="color: var(--dark-blue); font-weight: 700;">Sports Categories</h2>
+        <div class="row g-4">
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="sport-category" onclick="filterBySport('football')">
+                    <div class="sport-category-icon">
+                        <i class="fas fa-futbol"></i>
+                    </div>
+                    <div class="sport-category-name">Football</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="sport-category" onclick="filterBySport('cricket')">
+                    <div class="sport-category-icon">
+                        <i class="fas fa-baseball-ball"></i>
+                    </div>
+                    <div class="sport-category-name">Cricket</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="sport-category" onclick="filterBySport('basketball')">
+                    <div class="sport-category-icon">
+                        <i class="fas fa-basketball-ball"></i>
+                    </div>
+                    <div class="sport-category-name">Basketball</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="sport-category" onclick="filterBySport('badminton')">
+                    <div class="sport-category-icon">
+                        <i class="fas fa-table-tennis"></i>
+                    </div>
+                    <div class="sport-category-name">Badminton</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="sport-category" onclick="filterBySport('tennis')">
+                    <div class="sport-category-icon">
+                        <i class="fas fa-volleyball-ball"></i>
+                    </div>
+                    <div class="sport-category-name">Tennis</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="sport-category" onclick="filterBySport('multi-sport')">
+                    <div class="sport-category-icon">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <div class="sport-category-name">Multi-Sport</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Popular Facilities -->
+    <section class="container my-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 style="color: var(--dark-blue); font-weight: 700;">Popular Facilities</h2>
+            <a href="facilities.html" class="btn btn-outline">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="row g-4" id="popularFacilities">
+            <div class="col-12 text-center">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Check Availability Panel -->
+    <section class="container my-5">
+        <div class="card p-4">
+            <h3 class="mb-4" style="color: var(--dark-blue); font-weight: 700;">Check Availability</h3>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Select Sport</label>
+                    <select class="form-select" id="availabilitySport">
+                        <option value="">All Sports</option>
+                        <option value="football">Football</option>
+                        <option value="cricket">Cricket</option>
+                        <option value="basketball">Basketball</option>
+                        <option value="badminton">Badminton</option>
+                        <option value="tennis">Tennis</option>
+                        <option value="multi-sport">Multi-Sport</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Select Date</label>
+                    <input type="date" class="form-control" id="availabilityDate">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" onclick="checkAvailability()">
+                        <i class="fas fa-calendar-check"></i> Check Availability
+                    </button>
+                </div>
+            </div>
+            <div id="availabilityResults" class="mt-4"></div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2024 SportConnect. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Set minimum date to today
+        document.getElementById('availabilityDate').min = new Date().toISOString().split('T')[0];
+        document.getElementById('availabilityDate').value = new Date().toISOString().split('T')[0];
+
+        // Load popular facilities on page load
+        window.onload = function() {
+            checkAuth();
+            loadPopularFacilities();
+        };
+
+        function loadPopularFacilities() {
+            fetch('/api/facilities')
+                .then(response => response.json())
+                .then(data => {
+                    const facilities = data.facilities.slice(0, 6);
+                    displayFacilities(facilities, 'popularFacilities');
+                })
+                .catch(error => {
+                    console.error('Error loading facilities:', error);
+                    document.getElementById('popularFacilities').innerHTML = 
+                        '<div class="col-12 text-center text-danger">Failed to load facilities</div>';
+                });
+        }
+
+        function displayFacilities(facilities, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = facilities.map(facility => `
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 fade-in">
+                        <img src="${facility.image || 'https://via.placeholder.com/400x200'}" 
+                             class="card-img-top" alt="${facility.name}">
+                        <div class="card-body">
+                            <h5 class="card-title">${facility.name}</h5>
+                            <p class="card-text">
+                                <span class="location-tag">
+                                    <i class="fas fa-map-marker-alt"></i> ${facility.location}
+                                </span>
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge badge-info">${facility.sport_type}</span>
+                                <div class="rating-stars">
+                                    ${'★'.repeat(Math.round(facility.avg_rating))}${'☆'.repeat(5 - Math.round(facility.avg_rating))}
+                                    <small>(${facility.review_count})</small>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="price-tag">₹${facility.price_per_hour}/hr</span>
+                                <a href="facility-details.html?id=${facility.id}" class="btn btn-primary">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function searchFacilities() {
+            const query = document.getElementById('searchInput').value;
+            window.location.href = `facilities.html?search=${encodeURIComponent(query)}`;
+        }
+
+        function filterBySport(sport) {
+            window.location.href = `facilities.html?sport_type=${sport}`;
+        }
+
+        function checkAvailability() {
+            const sport = document.getElementById('availabilitySport').value;
+            const date = document.getElementById('availabilityDate').value;
+            
+            if (!date) {
+                alert('Please select a date');
+                return;
+            }
+
+            let url = '/api/facilities';
+            if (sport) {
+                url += `?sport_type=${sport}`;
+            }
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const resultsDiv = document.getElementById('availabilityResults');
+                    if (data.facilities.length === 0) {
+                        resultsDiv.innerHTML = '<div class="alert alert-info">No facilities found for the selected criteria.</div>';
+                        return;
+                    }
+
+                    resultsDiv.innerHTML = `
+                        <h5 class="mb-3">Available Facilities on ${new Date(date).toLocaleDateString()}</h5>
+                        <div class="row g-3">
+                            ${data.facilities.map(facility => `
+                                <div class="col-md-6">
+                                    <div class="card p-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">${facility.name}</h6>
+                                                <small class="text-muted">${facility.location}</small>
+                                            </div>
+                                            <a href="facility-details.html?id=${facility.id}&date=${date}" 
+                                               class="btn btn-sm btn-success">
+                                                View Slots
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error checking availability:', error);
+                    document.getElementById('availabilityResults').innerHTML = 
+                        '<div class="alert alert-danger">Failed to check availability</div>';
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - SportConnect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-futbol"></i> SportConnect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="facilities.html">Facilities</a>
+                    </li>
+                    <li class="nav-item" id="authLinks">
+                        <a class="nav-link" href="login.html">Login</a>
+                        <a class="nav-link" href="signup.html">Sign Up</a>
+                    </li>
+                    <li class="nav-item" id="userLinks" style="display: none;">
+                        <a class="nav-link active" href="my-bookings.html">My Bookings</a>
+                        <a class="nav-link" href="profile.html">Profile</a>
+                        <a class="nav-link" href="#" onclick="logout()">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- My Bookings Section -->
+    <section class="container my-5">
+        <h2 class="mb-4" style="color: var(--dark-blue); font-weight: 700;">My Bookings</h2>
+        
+        <div class="mb-4">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary" onclick="loadBookings('all')">All</button>
+                <button type="button" class="btn btn-outline-primary" onclick="loadBookings('confirmed')">Upcoming</button>
+                <button type="button" class="btn btn-outline-primary" onclick="loadBookings('cancelled')">Cancelled</button>
+                <button type="button" class="btn btn-outline-primary" onclick="loadBookings('completed')">Completed</button>
+            </div>
+        </div>
+        
+        <div id="bookingsContainer">
+            <div class="text-center">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2024 SportConnect. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        window.onload = function() {
+            checkAuth();
+            loadBookings('all');
+        };
+
+        function loadBookings(status) {
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            let url = '/api/bookings/my';
+            if (status && status !== 'all') {
+                url += `?status=${status}`;
+            }
+
+            const container = document.getElementById('bookingsContainer');
+            container.innerHTML = '<div class="text-center"><div class="spinner"></div></div>';
+
+            fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayBookings(data.bookings);
+            })
+            .catch(error => {
+                console.error('Error loading bookings:', error);
+                container.innerHTML = '<div class="alert alert-danger">Failed to load bookings</div>';
+            });
+        }
+
+        function displayBookings(bookings) {
+            const container = document.getElementById('bookingsContainer');
+            
+            if (bookings.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i> No bookings found.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="row g-4">
+                    ${bookings.map(booking => `
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 fade-in">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <h5 class="card-title mb-1">${booking.facility_name}</h5>
+                                            <small class="text-muted">${booking.sport_type}</small>
+                                        </div>
+                                        <span class="badge ${getStatusBadgeClass(booking.booking_status)}">
+                                            ${booking.booking_status.charAt(0).toUpperCase() + booking.booking_status.slice(1)}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <i class="fas fa-calendar-alt text-muted"></i>
+                                        <span class="ms-2">${new Date(booking.booking_date).toLocaleDateString()}</span>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <i class="fas fa-clock text-muted"></i>
+                                        <span class="ms-2">${formatTime(booking.start_time)} - ${formatTime(booking.end_time)}</span>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <i class="fas fa-map-marker-alt text-muted"></i>
+                                        <span class="ms-2">${booking.location}</span>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <i class="fas fa-receipt text-muted"></i>
+                                        <span class="ms-2">Booking ID: ${booking.booking_id}</span>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="price-tag">₹${booking.amount}</span>
+                                        ${booking.booking_status === 'confirmed' ? `
+                                            <button class="btn btn-sm btn-danger" onclick="cancelBooking(${booking.id})">
+                                                <i class="fas fa-times"></i> Cancel
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'confirmed':
+                    return 'badge-success';
+                case 'cancelled':
+                    return 'badge-danger';
+                case 'completed':
+                    return 'badge-info';
+                default:
+                    return 'badge-warning';
+            }
+        }
+
+        function formatTime(time) {
+            const [hours, minutes] = time.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 || 12;
+            return `${hour12}:${minutes} ${ampm}`;
+        }
+
+        function cancelBooking(bookingId) {
+            if (!confirm('Are you sure you want to cancel this booking?')) {
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+
+            fetch(`/api/bookings/${bookingId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                alert('Booking cancelled successfully');
+                loadBookings('all');
+            })
+            .catch(error => {
+                console.error('Error cancelling booking:', error);
+                alert('Failed to cancel booking');
+            });
+        }
+    </script>
+</body>
+</html>

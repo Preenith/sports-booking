@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang=" en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SportConnect - Book Your Favourite Sports Ground</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-running me-2"></i> SportConnect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="facilities.html">Facilities</a>
+                    </li>
+                </ul>
+                <div class="d-flex" id="authButtons">
+                    <a href="login.html" class="btn btn-outline-light me-2">Login</a>
+                    <a href="signup.html" class="btn btn-light">Sign Up</a>
+                </div>
+                <div class="d-none" id="userMenu">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <span id="userName">User</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="my-bookings.html">My Bookings</a></li>
+                            <li><a class="dropdown-item" href="profile.html">Profile</a></li>
+                            <li id="adminLink" style="display:none;"><a class="dropdown-item" href="admin.html">Admin Dashboard</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()">Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center">
+                    <h1 class="display-4 fw-bold text-white mb-4">Book Your Favourite Sports Ground or Court</h1>
+                    <p class="lead text-white mb-4">Discover and book sports facilities near you with ease</p>
+                    <a href="facilities.html" class="btn btn-light btn-lg">Explore Facilities</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5">
+        <div class="container">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="text-center mb-4">Popular Facilities</h2>
+                </div>
+            </div>
+            <div class="row" id="popularFacilities">
+                <div class="col-md-4 mb-4">
+                    <div class="card facility-card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Loading...</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="text-center">
+                        <i class="fas fa-futbol fa-3x text-primary mb-3"></i>
+                        <h4>Multiple Sports</h4>
+                        <p>Football, Cricket, Basketball, Badminton, Tennis and more</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="text-center">
+                        <i class="fas fa-clock fa-3x text-primary mb-3"></i>
+                        <h4>Easy Booking</h4>
+                        <p>Book your preferred time slots in just a few clicks</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="text-center">
+                        <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                        <h4>Secure Payments</h4>
+                        <p>Safe and secure payment processing</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>SportConnect</h5>
+                    <p>Your one-stop solution for sports facility booking</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>&copy; 2024 SportConnect. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/facilities.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadPopularFacilities();
+        });
+    </script>
+</body>
+</html>

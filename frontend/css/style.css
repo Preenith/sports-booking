@@ -1,0 +1,263 @@
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #198754;
+    --accent-color: #ffc107;
+    --dark-color: #212529;
+    --light-color: #f8f9fa;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--light-color);
+}
+
+.hero-section {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    padding: 100px 0;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+}
+
+.auth-page {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    min-height: 100vh;
+}
+
+.auth-card {
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin: 50px 0;
+}
+
+.facility-card {
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.facility-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.facility-image {
+    height: 200px;
+    object-fit: cover;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+}
+
+.facility-card .card-body {
+    padding: 1.5rem;
+}
+
+.sport-badge {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+.price-tag {
+    color: var(--secondary-color);
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+.rating {
+    color: var(--accent-color);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0b5ed7 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+}
+
+.btn-outline-light {
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: var(--accent-color) !important;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    padding: 0.75rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.alert {
+    border-radius: 8px;
+}
+
+.table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table thead {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0b5ed7 100%);
+    color: white;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.slot-available {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.slot-booked {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.slot-unavailable {
+    background-color: #e2e3e5;
+    border-color: #d6d8db;
+    color: #383d41;
+}
+
+.time-slot {
+    padding: 0.75rem;
+    margin: 0.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    border: 2px solid transparent;
+}
+
+.time-slot:hover:not(.slot-booked):not(.slot-unavailable) {
+    transform: scale(1.05);
+    border-color: var(--primary-color);
+}
+
+.time-slot.selected {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    border-color: var(--primary-color);
+}
+
+.booking-summary {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    padding: 2rem;
+}
+
+.status-confirmed {
+    color: var(--secondary-color);
+    font-weight: bold;
+}
+
+.status-cancelled {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.status-completed {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 60px 0;
+    }
+    
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+    
+    .facility-image {
+        height: 150px;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+    }
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+.modal-content {
+    border-radius: 15px;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0b5ed7 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}

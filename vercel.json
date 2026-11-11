@@ -1,12 +1,14 @@
 {
+  "buildCommand": "npm install",
+  "outputDirectory": ".",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "backend/server.js"
+      "source": "/api/(.*)",
+      "destination": "/backend/server.js"
     },
     {
       "source": "/(.*)",
-      "destination": "backend/server.js"
+      "destination": "/backend/server.js"
     }
   ]
 }

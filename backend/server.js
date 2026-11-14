@@ -3,15 +3,11 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-const { db } = require('./config/firebase');
+const connectDB = require('./config/mongodb');
 
 const app = express();
 
-db.collection('users').get().then(() => {
-  console.log('Firebase Connected');
-}).catch(err => {
-  console.error('Firebase connection error:', err);
-});
+connectDB();
 
 app.use(cors());
 app.use(express.json());

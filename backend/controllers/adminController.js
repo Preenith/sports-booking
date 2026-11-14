@@ -1,61 +1,51 @@
-const { db } = require('../config/firebase');
+const User = require('../models/User');
+const Facility = require('../models/Facility');
+const Booking = require('../models/Booking');
+const TimeSlot = require('../models/TimeSlot');
 
 const getDashboardStats = async (req, res) => {
   try {
-    const usersSnapshot = await db.collection('users').where('role', '==', 'user').get();
-    const totalUsers = usersSnapshot.size;
-
-    const facilitiesSnapshot = await db.collection('facilities').get();
-    const totalFacilities = facilitiesSnapshot.size;
+    const totalUsers = await User.countDocuments({ role: 'user' });
+    const totalFacilities = await Facility.countDocuments();
 
     const today = new Date().toISOString().split('T')[0];
-    const allBookingsSnapshot = await db.collection('bookings').get();
-    
-    const todayBookings = allBookingsSnapshot.docs.filter(
-      doc => doc.data().booking_date === today && doc.data().booking_status === 'confirmed'
-    ).length;
-
-    const upcomingBookings = allBookingsSnapshot.docs.filter(
-      doc => doc.data().booking_date >= today && doc.data().booking_status === 'confirmed'
-    ).length;
-
-    const confirmedBookings = allBookingsSnapshot.docs.filter(
-      doc => doc.data().booking_status === 'confirmed'
-    );
-    
-    let totalRevenue = 0;
-    confirmedBookings.forEach(doc => {
-      totalRevenue += doc.data().amount || 0;
+    const todayBookings = await Booking.countDocuments({
+      booking_date: today,
+      booking_status: 'confirmed'
     });
-    
-    const sportCounts = {};
-    for (const doc of confirmedBookings) {
-      const booking = doc.data();
-      const facilityDoc = await db.collection('facilities').doc(booking.facility_id).get();
-      if (facilityDoc.exists) {
-        const sport = facilityDoc.data().sport_type;
-        sportCounts[sport] = (sportCounts[sport] || 0) + 1;
-      }
-    }
-    
-    const bookingsBySport = Object.entries(sportCounts)
-      .map(([sport, count]) => ({ _id: sport, count }))
-      .sort((a, b) => b.count - a.count);
 
+    const upcomingBookings = await Booking.countDocuments({
+      booking_date: { $gte: today },
+      booking_status: 'confirmed'
+    });
+
+    const confirmedBookings = await Booking.find({ booking_status: 'confirmed' })
+      .populate('facility_id');
+
+    let totalRevenue = 0;
+    const sportCounts = {};
     const facilityUsage = {};
-    for (const doc of confirmedBookings) {
-      const booking = doc.data();
-      const facilityDoc = await db.collection('facilities').doc(booking.facility_id).get();
-      if (facilityDoc.exists) {
-        const facilityId = booking.facility_id;
-        const facilityName = facilityDoc.data().name;
+
+    confirmedBookings.forEach(booking => {
+      totalRevenue += booking.total_amount || 0;
+      
+      if (booking.facility_id) {
+        const sport = booking.facility_id.sport_type;
+        sportCounts[sport] = (sportCounts[sport] || 0) + 1;
+
+        const facilityId = booking.facility_id._id.toString();
+        const facilityName = booking.facility_id.name;
         if (!facilityUsage[facilityId]) {
           facilityUsage[facilityId] = { _id: facilityId, facilityName, bookings: 0 };
         }
         facilityUsage[facilityId].bookings++;
       }
-    }
-    
+    });
+
+    const bookingsBySport = Object.entries(sportCounts)
+      .map(([sport, count]) => ({ _id: sport, count }))
+      .sort((a, b) => b.count - a.count);
+
     const facilityUsageArray = Object.values(facilityUsage)
       .sort((a, b) => b.bookings - a.bookings);
 
@@ -77,21 +67,16 @@ const getDashboardStats = async (req, res) => {
 const getAllUsers = async (req, res) => {
   try {
     const { search } = req.query;
-    const snapshot = await db.collection('users').where('role', '==', 'user').get();
-    let users = snapshot.docs.map(doc => {
-      const user = { id: doc.id, ...doc.data() };
-      delete user.password;
-      return user;
-    });
+    let query = { role: 'user' };
 
     if (search) {
-      users = users.filter(user => 
-        user.name.toLowerCase().includes(search.toLowerCase()) ||
-        user.email.toLowerCase().includes(search.toLowerCase())
-      );
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
     }
 
-    users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const users = await User.find(query).select('-password').sort({ createdAt: -1 });
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -100,23 +85,16 @@ const getAllUsers = async (req, res) => {
 
 const toggleUserStatus = async (req, res) => {
   try {
-    const userRef = db.collection('users').doc(req.params.id);
-    const userDoc = await userRef.get();
-
-    if (!userDoc.exists) {
+    const user = await User.findById(req.params.id);
+    if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const currentStatus = userDoc.data().status;
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    user.status = user.status === 'active' ? 'inactive' : 'active';
+    await user.save();
 
-    await userRef.update({ status: newStatus });
-
-    const updatedDoc = await userRef.get();
-    const user = { id: updatedDoc.id, ...updatedDoc.data() };
-    delete user.password;
-
-    res.json({ message: 'User status updated', user });
+    const updatedUser = await User.findById(req.params.id).select('-password');
+    res.json({ message: 'User status updated', user: updatedUser });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -124,9 +102,7 @@ const toggleUserStatus = async (req, res) => {
 
 const getAllFacilitiesAdmin = async (req, res) => {
   try {
-    const snapshot = await db.collection('facilities').get();
-    const facilities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    facilities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const facilities = await Facility.find().sort({ createdAt: -1 });
     res.json(facilities);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -150,7 +126,7 @@ const createFacility = async (req, res) => {
       return res.status(400).json({ message: 'Required fields are missing' });
     }
 
-    const facilityRef = await db.collection('facilities').add({
+    const facility = await Facility.create({
       name,
       sport_type,
       location,
@@ -161,12 +137,8 @@ const createFacility = async (req, res) => {
       rules: rules || '',
       rating: 4.5,
       review_count: 0,
-      status: 'active',
-      created_at: new Date().toISOString()
+      status: 'active'
     });
-
-    const facilityDoc = await facilityRef.get();
-    const facility = { id: facilityRef.id, ...facilityDoc.data() };
 
     res.status(201).json({ message: 'Facility created successfully', facility });
   } catch (error) {
@@ -177,10 +149,8 @@ const createFacility = async (req, res) => {
 
 const updateFacility = async (req, res) => {
   try {
-    const facilityRef = db.collection('facilities').doc(req.params.id);
-    const facilityDoc = await facilityRef.get();
-
-    if (!facilityDoc.exists) {
+    const facility = await Facility.findById(req.params.id);
+    if (!facility) {
       return res.status(404).json({ message: 'Facility not found' });
     }
 
@@ -196,21 +166,17 @@ const updateFacility = async (req, res) => {
       status
     } = req.body;
 
-    const updateData = {};
-    if (name) updateData.name = name;
-    if (sport_type) updateData.sport_type = sport_type;
-    if (location) updateData.location = location;
-    if (description) updateData.description = description;
-    if (price_per_hour) updateData.price_per_hour = price_per_hour;
-    if (image !== undefined) updateData.image = image;
-    if (facilities_available !== undefined) updateData.facilities_available = facilities_available;
-    if (rules !== undefined) updateData.rules = rules;
-    if (status) updateData.status = status;
+    if (name) facility.name = name;
+    if (sport_type) facility.sport_type = sport_type;
+    if (location) facility.location = location;
+    if (description) facility.description = description;
+    if (price_per_hour) facility.price_per_hour = price_per_hour;
+    if (image !== undefined) facility.image = image;
+    if (facilities_available !== undefined) facility.facilities_available = facilities_available;
+    if (rules !== undefined) facility.rules = rules;
+    if (status) facility.status = status;
 
-    await facilityRef.update(updateData);
-
-    const updatedDoc = await facilityRef.get();
-    const facility = { id: facilityRef.id, ...updatedDoc.data() };
+    await facility.save();
 
     res.json({ message: 'Facility updated successfully', facility });
   } catch (error) {
@@ -220,14 +186,13 @@ const updateFacility = async (req, res) => {
 
 const deleteFacility = async (req, res) => {
   try {
-    const facilityRef = db.collection('facilities').doc(req.params.id);
-    const facilityDoc = await facilityRef.get();
-
-    if (!facilityDoc.exists) {
+    const facility = await Facility.findById(req.params.id);
+    if (!facility) {
       return res.status(404).json({ message: 'Facility not found' });
     }
 
-    await facilityRef.update({ status: 'inactive' });
+    facility.status = 'inactive';
+    await facility.save();
 
     res.json({ message: 'Facility deactivated successfully' });
   } catch (error) {
@@ -243,27 +208,23 @@ const createTimeSlot = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const existingSlotSnapshot = await db.collection('time_slots')
-      .where('facility_id', '==', facility_id)
-      .where('date', '==', date)
-      .where('start_time', '==', start_time)
-      .get();
+    const existingSlot = await TimeSlot.findOne({
+      facility_id,
+      date,
+      start_time
+    });
 
-    if (!existingSlotSnapshot.empty) {
+    if (existingSlot) {
       return res.status(400).json({ message: 'Slot already exists for this time' });
     }
 
-    const slotRef = await db.collection('time_slots').add({
+    const slot = await TimeSlot.create({
       facility_id,
       date,
       start_time,
       end_time,
-      status: 'available',
-      created_at: new Date().toISOString()
+      status: 'available'
     });
-
-    const slotDoc = await slotRef.get();
-    const slot = { id: slotRef.id, ...slotDoc.data() };
 
     res.status(201).json({ message: 'Time slot created successfully', slot });
   } catch (error) {
@@ -273,20 +234,16 @@ const createTimeSlot = async (req, res) => {
 
 const updateTimeSlot = async (req, res) => {
   try {
-    const slotRef = db.collection('time_slots').doc(req.params.id);
-    const slotDoc = await slotRef.get();
-
-    if (!slotDoc.exists) {
+    const slot = await TimeSlot.findById(req.params.id);
+    if (!slot) {
       return res.status(404).json({ message: 'Time slot not found' });
     }
 
     const { status } = req.body;
     if (status) {
-      await slotRef.update({ status });
+      slot.status = status;
+      await slot.save();
     }
-
-    const updatedDoc = await slotRef.get();
-    const slot = { id: slotRef.id, ...updatedDoc.data() };
 
     res.json({ message: 'Time slot updated successfully', slot });
   } catch (error) {
@@ -297,37 +254,17 @@ const updateTimeSlot = async (req, res) => {
 const getAllBookingsAdmin = async (req, res) => {
   try {
     const { status, date, facility } = req.query;
-    let query = db.collection('bookings');
+    let query = {};
 
-    const snapshot = await query.get();
-    let bookings = [];
+    if (status) query.booking_status = status;
+    if (date) query.booking_date = date;
+    if (facility) query.facility_id = facility;
 
-    for (const doc of snapshot.docs) {
-      const booking = { id: doc.id, ...doc.data() };
-      
-      let include = true;
-      if (status && booking.booking_status !== status) include = false;
-      if (date && booking.booking_date !== date) include = false;
-      if (facility && booking.facility_id !== facility) include = false;
+    const bookings = await Booking.find(query)
+      .populate('facility_id')
+      .populate('user_id', '-password')
+      .sort({ createdAt: -1 });
 
-      if (include) {
-        const facilityDoc = await db.collection('facilities').doc(booking.facility_id).get();
-        if (facilityDoc.exists) {
-          booking.facility_id = { id: facilityDoc.id, ...facilityDoc.data() };
-        }
-
-        const userDoc = await db.collection('users').doc(booking.user_id).get();
-        if (userDoc.exists) {
-          const user = { id: userDoc.id, ...userDoc.data() };
-          delete user.password;
-          booking.user_id = user;
-        }
-
-        bookings.push(booking);
-      }
-    }
-
-    bookings.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     res.json(bookings);
   } catch (error) {
     console.error('Get all bookings error:', error);
@@ -337,22 +274,16 @@ const getAllBookingsAdmin = async (req, res) => {
 
 const updateBookingStatus = async (req, res) => {
   try {
-    const bookingRef = db.collection('bookings').doc(req.params.id);
-    const bookingDoc = await bookingRef.get();
-
-    if (!bookingDoc.exists) {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
     const { booking_status, payment_status } = req.body;
-    const updateData = {};
-    if (booking_status) updateData.booking_status = booking_status;
-    if (payment_status) updateData.payment_status = payment_status;
+    if (booking_status) booking.booking_status = booking_status;
+    if (payment_status) booking.payment_status = payment_status;
 
-    await bookingRef.update(updateData);
-
-    const updatedDoc = await bookingRef.get();
-    const booking = { id: bookingRef.id, ...updatedDoc.data() };
+    await booking.save();
 
     res.json({ message: 'Booking status updated successfully', booking });
   } catch (error) {

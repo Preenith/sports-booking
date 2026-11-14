@@ -1,16 +1,16 @@
-const { db } = require('../config/firebase');
+const Facility = require('../models/Facility');
+const TimeSlot = require('../models/TimeSlot');
 
 const getAllFacilities = async (req, res) => {
   try {
     const { sport, location } = req.query;
-    let query = db.collection('facilities').where('status', '==', 'active');
+    let query = { status: 'active' };
 
     if (sport) {
-      query = query.where('sport_type', '==', sport);
+      query.sport_type = sport;
     }
 
-    const snapshot = await query.get();
-    let facilities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let facilities = await Facility.find(query);
 
     if (location) {
       facilities = facilities.filter(f => 
@@ -18,8 +18,15 @@ const getAllFacilities = async (req, res) => {
       );
     }
 
-    facilities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    res.json(facilities);
+    facilities.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    // Transform _id to id for frontend compatibility
+    const transformedFacilities = facilities.map(f => ({
+      ...f.toObject(),
+      id: f._id.toString()
+    }));
+    
+    res.json(transformedFacilities);
   } catch (error) {
     console.error('Get facilities error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -28,13 +35,18 @@ const getAllFacilities = async (req, res) => {
 
 const getFacilityById = async (req, res) => {
   try {
-    const facilityDoc = await db.collection('facilities').doc(req.params.id).get();
+    const facility = await Facility.findById(req.params.id);
     
-    if (!facilityDoc.exists) {
+    if (!facility) {
       return res.status(404).json({ message: 'Facility not found' });
     }
 
-    res.json({ id: facilityDoc.id, ...facilityDoc.data() });
+    const transformedFacility = {
+      ...facility.toObject(),
+      id: facility._id.toString()
+    };
+
+    res.json(transformedFacility);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -49,12 +61,11 @@ const getFacilityAvailability = async (req, res) => {
       return res.status(400).json({ message: 'Date is required' });
     }
 
-    const snapshot = await db.collection('time_slots')
-      .where('facility_id', '==', id)
-      .where('date', '==', date)
-      .get();
+    const slots = await TimeSlot.find({
+      facility_id: id,
+      date: date
+    });
 
-    const slots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     slots.sort((a, b) => a.start_time.localeCompare(b.start_time));
 
     res.json(slots);
@@ -66,11 +77,10 @@ const getFacilityAvailability = async (req, res) => {
 
 const getSportTypes = async (req, res) => {
   try {
-    const snapshot = await db.collection('facilities').get();
+    const facilities = await Facility.find({ status: 'active' });
     const sportTypes = new Set();
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      if (data.sport_type) sportTypes.add(data.sport_type);
+    facilities.forEach(f => {
+      if (f.sport_type) sportTypes.add(f.sport_type);
     });
     res.json(Array.from(sportTypes));
   } catch (error) {

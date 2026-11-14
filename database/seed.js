@@ -1,36 +1,39 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { db } = require('../backend/config/firebase');
+const mongoose = require('mongoose');
+const User = require('../backend/models/User');
+const Facility = require('../backend/models/Facility');
+const TimeSlot = require('../backend/models/TimeSlot');
+const connectDB = require('../backend/config/mongodb');
 
 const seedDatabase = async () => {
   try {
+    await connectDB();
     console.log('Starting database seed...');
 
     const salt = await bcrypt.genSalt(10);
     const adminPassword = await bcrypt.hash('admin123', salt);
     const userPassword = await bcrypt.hash('user123', salt);
 
-    const adminRef = await db.collection('users').add({
+    const adminUser = await User.create({
       name: 'Admin User',
       email: 'admin@sportconnect.com',
       phone: '9876543210',
       password: adminPassword,
       role: 'admin',
-      status: 'active',
-      created_at: new Date().toISOString()
+      status: 'active'
     });
-    console.log('Admin user created with ID:', adminRef.id);
+    console.log('Admin user created with ID:', adminUser._id);
 
-    const userRef = await db.collection('users').add({
+    const testUser = await User.create({
       name: 'John Doe',
       email: 'john@example.com',
       phone: '9876543211',
       password: userPassword,
       role: 'user',
-      status: 'active',
-      created_at: new Date().toISOString()
+      status: 'active'
     });
-    console.log('Test user created with ID:', userRef.id);
+    console.log('Test user created with ID:', testUser._id);
 
     const facilities = [
       {
@@ -110,20 +113,25 @@ const seedDatabase = async () => {
         rating: 4.8,
         review_count: 73,
         status: 'active'
+      },
+      {
+        name: 'Volleyball Court',
+        sport_type: 'Volleyball',
+        location: 'Sports Complex',
+        description: 'Professional indoor volleyball court with proper flooring and net systems.',
+        price_per_hour: 350,
+        image: '',
+        facilities_available: 'Professional nets, Non-slip flooring, Locker rooms, First aid kit',
+        rules: 'Non-marking shoes required, Maximum 12 players, No food on court',
+        rating: 4.4,
+        review_count: 32,
+        status: 'active'
       }
     ];
 
-    const facilityIds = [];
-    for (const facility of facilities) {
-      const facilityRef = await db.collection('facilities').add({
-        ...facility,
-        created_at: new Date().toISOString()
-      });
-      facilityIds.push(facilityRef.id);
-      console.log(`Facility "${facility.name}" created with ID:`, facilityRef.id);
-    }
+    const facilityDocs = await Facility.insertMany(facilities);
+    console.log('Facilities created:', facilityDocs.length);
 
-    const timeSlots = [];
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -152,21 +160,23 @@ const seedDatabase = async () => {
       { start: '21:00', end: '22:00' }
     ];
 
-    for (const facilityId of facilityIds) {
+    const timeSlots = [];
+    for (const facility of facilityDocs) {
       for (const date of dates) {
         for (const slot of slotTimes) {
           const status = Math.random() > 0.7 ? 'booked' : 'available';
-          await db.collection('time_slots').add({
-            facility_id: facilityId,
+          timeSlots.push({
+            facility_id: facility._id,
             date: date,
             start_time: slot.start,
             end_time: slot.end,
-            status: status,
-            created_at: new Date().toISOString()
+            status: status
           });
         }
       }
     }
+
+    await TimeSlot.insertMany(timeSlots);
     console.log('Time slots created for facilities');
 
     console.log('Database seeding completed successfully!');
@@ -176,8 +186,12 @@ const seedDatabase = async () => {
     console.log('Admin Password: admin123');
     console.log('\nUser Email: john@example.com');
     console.log('User Password: user123');
+    
+    await mongoose.disconnect();
   } catch (error) {
     console.error('Error seeding database:', error);
+    await mongoose.disconnect();
+    process.exit(1);
   }
 };
 

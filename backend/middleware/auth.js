@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { db } = require('../config/firebase');
+const User = require('../models/User');
 
 const auth = async (req, res, next) => {
   try {
@@ -10,13 +10,11 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userDoc = await db.collection('users').doc(decoded.id).get();
+    const user = await User.findById(decoded.id);
 
-    if (!userDoc.exists) {
+    if (!user) {
       return res.status(401).json({ message: 'User not found' });
     }
-
-    const user = { id: userDoc.id, ...userDoc.data() };
 
     if (user.status !== 'active') {
       return res.status(401).json({ message: 'User account is inactive' });

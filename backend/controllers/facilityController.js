@@ -1,7 +1,9 @@
 const Facility = require('../models/Facility');
 const TimeSlot = require('../models/TimeSlot');
+const connectDB = require('../config/mongodb-serverless');
 
 const getAllFacilities = async (req, res) => {
+  await connectDB();
   try {
     const { sport, location } = req.query;
     let query = { status: 'active' };
@@ -76,6 +78,7 @@ const getFacilityAvailability = async (req, res) => {
 };
 
 const getSportTypes = async (req, res) => {
+  await connectDB();
   try {
     const facilities = await Facility.find({ status: 'active' });
     const sportTypes = new Set();

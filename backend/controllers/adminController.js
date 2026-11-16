@@ -2,8 +2,10 @@ const User = require('../models/User');
 const Facility = require('../models/Facility');
 const Booking = require('../models/Booking');
 const TimeSlot = require('../models/TimeSlot');
+const connectDB = require('../config/mongodb-serverless');
 
 const getDashboardStats = async (req, res) => {
+  await connectDB();
   try {
     const totalUsers = await User.countDocuments({ role: 'user' });
     const totalFacilities = await Facility.countDocuments();
@@ -65,6 +67,7 @@ const getDashboardStats = async (req, res) => {
 };
 
 const getAllUsers = async (req, res) => {
+  await connectDB();
   try {
     const { search } = req.query;
     let query = { role: 'user' };
@@ -84,6 +87,7 @@ const getAllUsers = async (req, res) => {
 };
 
 const toggleUserStatus = async (req, res) => {
+  await connectDB();
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
@@ -101,6 +105,7 @@ const toggleUserStatus = async (req, res) => {
 };
 
 const getAllFacilitiesAdmin = async (req, res) => {
+  await connectDB();
   try {
     const facilities = await Facility.find().sort({ createdAt: -1 });
     res.json(facilities);
@@ -110,6 +115,7 @@ const getAllFacilitiesAdmin = async (req, res) => {
 };
 
 const createFacility = async (req, res) => {
+  await connectDB();
   try {
     const {
       name,
@@ -148,6 +154,7 @@ const createFacility = async (req, res) => {
 };
 
 const updateFacility = async (req, res) => {
+  await connectDB();
   try {
     const facility = await Facility.findById(req.params.id);
     if (!facility) {
@@ -185,6 +192,7 @@ const updateFacility = async (req, res) => {
 };
 
 const deleteFacility = async (req, res) => {
+  await connectDB();
   try {
     const facility = await Facility.findById(req.params.id);
     if (!facility) {
@@ -201,6 +209,7 @@ const deleteFacility = async (req, res) => {
 };
 
 const createTimeSlot = async (req, res) => {
+  await connectDB();
   try {
     const { facility_id, date, start_time, end_time } = req.body;
 
@@ -233,6 +242,7 @@ const createTimeSlot = async (req, res) => {
 };
 
 const updateTimeSlot = async (req, res) => {
+  await connectDB();
   try {
     const slot = await TimeSlot.findById(req.params.id);
     if (!slot) {
@@ -252,6 +262,7 @@ const updateTimeSlot = async (req, res) => {
 };
 
 const getAllBookingsAdmin = async (req, res) => {
+  await connectDB();
   try {
     const { status, date, facility } = req.query;
     let query = {};
@@ -273,6 +284,7 @@ const getAllBookingsAdmin = async (req, res) => {
 };
 
 const updateBookingStatus = async (req, res) => {
+  await connectDB();
   try {
     const booking = await Booking.findById(req.params.id);
     if (!booking) {

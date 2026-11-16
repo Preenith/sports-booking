@@ -4,7 +4,16 @@ const mongoose = require('mongoose');
 const User = require('../backend/models/User');
 const Facility = require('../backend/models/Facility');
 const TimeSlot = require('../backend/models/TimeSlot');
-const connectDB = require('../backend/config/mongodb');
+
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sports-booking');
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`MongoDB connection error: ${error.message}`);
+    process.exit(1);
+  }
+};
 
 const seedDatabase = async () => {
   try {

@@ -1,8 +1,18 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+let connectDB;
+
+async function getDB() {
+  if (!connectDB) {
+    connectDB = require('../config/mongodb-serverless');
+  }
+  return connectDB();
+}
 
 const auth = async (req, res, next) => {
   try {
+    await getDB();
+    
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
@@ -23,6 +33,7 @@ const auth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.error('Auth middleware error:', error);
     res.status(401).json({ message: 'Token is not valid' });
   }
 };
@@ -37,6 +48,7 @@ const adminAuth = async (req, res, next) => {
     
     next();
   } catch (error) {
+    console.error('Admin auth error:', error);
     res.status(401).json({ message: 'Authentication failed' });
   }
 };

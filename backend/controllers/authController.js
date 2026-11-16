@@ -1,8 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const connectDB = require('../config/mongodb-serverless');
 
 const register = async (req, res) => {
+  await connectDB();
   try {
     const { name, email, phone, password, confirmPassword } = req.body;
 
@@ -57,6 +59,7 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
+  await connectDB();
   try {
     const { email, password } = req.body;
 
@@ -101,7 +104,7 @@ const login = async (req, res) => {
 
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user._id || req.user.id).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -112,6 +115,7 @@ const getProfile = async (req, res) => {
 };
 
 const updateProfile = async (req, res) => {
+  await connectDB();
   try {
     const { name, phone } = req.body;
     const updateData = {};
@@ -120,7 +124,7 @@ const updateProfile = async (req, res) => {
     if (phone) updateData.phone = phone;
 
     const user = await User.findByIdAndUpdate(
-      req.user.id,
+      req.user._id || req.user.id,
       updateData,
       { new: true }
     ).select('-password');
@@ -141,6 +145,7 @@ const updateProfile = async (req, res) => {
 };
 
 const changePassword = async (req, res) => {
+  await connectDB();
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
 
@@ -156,7 +161,7 @@ const changePassword = async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user._id);
     const isMatch = await bcrypt.compare(currentPassword, user.password);
 
     if (!isMatch) {

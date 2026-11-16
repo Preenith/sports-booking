@@ -3,6 +3,7 @@ const Booking = require('../models/Booking');
 const Facility = require('../models/Facility');
 const TimeSlot = require('../models/TimeSlot');
 const User = require('../models/User');
+const connectDB = require('../config/mongodb-serverless');
 
 const generateBookingId = () => {
   const timestamp = Date.now().toString(36);
@@ -120,6 +121,7 @@ const getBookingById = async (req, res) => {
 };
 
 const cancelBooking = async (req, res) => {
+  await connectDB();
   try {
     const booking = await Booking.findById(req.params.id);
 

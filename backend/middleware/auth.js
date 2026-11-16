@@ -11,6 +11,7 @@ async function getDB() {
 
 const auth = async (req, res, next) => {
   try {
+    console.log('Auth middleware - connecting to DB...');
     await getDB();
     
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -33,7 +34,7 @@ const auth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    console.error('Auth middleware error:', error.message);
     res.status(401).json({ message: 'Token is not valid' });
   }
 };
@@ -48,7 +49,7 @@ const adminAuth = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Admin auth error:', error);
+    console.error('Admin auth error:', error.message);
     res.status(401).json({ message: 'Authentication failed' });
   }
 };

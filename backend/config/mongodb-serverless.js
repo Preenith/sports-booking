@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sports-booking';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
+  console.error('MONGODB_URI is not set');
+  throw new Error('MONGODB_URI environment variable is required');
 }
 
 let cached = global.mongoose;
@@ -13,6 +14,8 @@ if (!cached) {
 }
 
 async function connectDB() {
+  // For Vercel, we need to close the connection after each request
+  // but since we can't do that in serverless, we keep it cached
   if (cached.conn) {
     return cached.conn;
   }
@@ -20,9 +23,13 @@ async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
     };
 
+    console.log('Connecting to MongoDB...');
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log('MongoDB connected successfully');
       return mongoose;
     });
   }
@@ -30,6 +37,7 @@ async function connectDB() {
   try {
     cached.conn = await cached.promise;
   } catch (e) {
+    console.error('MongoDB connection error:', e.message);
     cached.promise = null;
     throw e;
   }

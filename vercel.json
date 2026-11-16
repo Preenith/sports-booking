@@ -1,3 +1,18 @@
 {
-  "version": 2
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/public/index.html"
+    }
+  ],
+  "functions": {
+    "api/*.js": {
+      "includeFiles": "backend/**"
+    }
+  },
+  "env": {
+    "MONGODB_URI": "@mongo_uri",
+    "JWT_SECRET": "@jwt_secret"
+  }
 }

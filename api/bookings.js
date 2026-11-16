@@ -1,23 +1,11 @@
-const express = require('express');
-const cors = require('cors');
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use((req, res, next) => {
-  console.log('Bookings API:', req.method, req.url);
-  next();
-});
-
 const { auth } = require('../backend/middleware/auth');
 const { createBooking, getMyBookings } = require('../backend/controllers/bookingController');
 
 const handleRequest = async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    const path = url.pathname + url.search;
+    const path = url.pathname;
+    const searchParams = url.searchParams;
     
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -30,7 +18,24 @@ const handleRequest = async (req, res) => {
     
     console.log('Bookings API:', req.method, path);
     
+    const query = {};
+    for (const [key, value] of searchParams.entries()) {
+      query[key] = value;
+    }
+    req.query = query;
+    
+    // Parse body for POST requests
+    let body = null;
+    if (req.method === 'POST' && req.headers['content-type'] === 'application/json') {
+      try {
+        body = JSON.parse(req.body || '{}');
+      } catch (e) {
+        return res.status(400).json({ message: 'Invalid JSON' });
+      }
+    }
+    
     if (path === '/api/bookings' && req.method === 'POST') {
+      req.body = body;
       await auth(req, res, async () => {
         await createBooking(req, res);
       });
@@ -47,6 +52,4 @@ const handleRequest = async (req, res) => {
   }
 };
 
-module.exports = (req, res) => {
-  return handleRequest(req, res);
-};
+module.exports = handleRequest;

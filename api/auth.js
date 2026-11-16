@@ -1,22 +1,9 @@
-const express = require('express');
-const cors = require('cors');
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use((req, res, next) => {
-  console.log('Auth API:', req.method, req.url);
-  next();
-});
-
 const { register, login } = require('../backend/controllers/authController');
 
 const handleRequest = async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    const path = url.pathname + url.search;
+    const path = url.pathname;
     
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -29,9 +16,21 @@ const handleRequest = async (req, res) => {
     
     console.log('Auth API:', req.method, path);
     
+    // Parse body for POST requests
+    let body = null;
+    if (req.method === 'POST' && req.headers['content-type'] === 'application/json') {
+      try {
+        body = JSON.parse(req.body || '{}');
+      } catch (e) {
+        return res.status(400).json({ message: 'Invalid JSON' });
+      }
+    }
+    
     if (path === '/api/auth/register' && req.method === 'POST') {
+      req.body = body;
       await register(req, res);
     } else if (path === '/api/auth/login' && req.method === 'POST') {
+      req.body = body;
       await login(req, res);
     } else {
       res.status(404).json({ message: 'Route not found' });
@@ -42,6 +41,4 @@ const handleRequest = async (req, res) => {
   }
 };
 
-module.exports = (req, res) => {
-  return handleRequest(req, res);
-};
+module.exports = handleRequest;

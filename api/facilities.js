@@ -2,13 +2,12 @@ const { getAllFacilities, getSportTypes, getFacilityById, getFacilityAvailabilit
 
 const handleRequest = async (req, res) => {
   try {
-    // Parse the full URL properly for Vercel
-    const fullUrl = req.url;
+    // Vercel passes the full URL without the domain
+    const fullUrl = req.url || '';
     console.log('Full URL:', fullUrl);
     
-    // Vercel passes the full URL with /api prefix, so we need to parse it correctly
-    const path = req.url.split('?')[0];
-    const queryString = req.url.split('?')[1] || '';
+    // Split path and query string
+    const [path, queryString] = fullUrl.split('?');
     
     console.log('Parsed path:', path);
     console.log('Query string:', queryString);
@@ -31,27 +30,36 @@ const handleRequest = async (req, res) => {
       }
     }
     
-    console.log('Final path:', path);
-    console.log('Query:', query);
+    // Match routes
+    const isFacilitiesRoute = path === '/api/facilities';
+    const isSportsRoute = path === '/api/facilities/sports';
+    const isFacilityById = path.match(/^\/api\/facilities\/[^\/?]+$/);
+    const isAvailability = path.match(/^\/api\/facilities\/[^\/?]+\/availability$/);
     
-    if (path === '/api/facilities' && req.method === 'GET') {
+    console.log('Route checks:', { isFacilitiesRoute, isSportsRoute, isFacilityById, isAvailability });
+    
+    if (isFacilitiesRoute && req.method === 'GET') {
+      console.log('Matching: /api/facilities GET');
       req.query = query;
       await getAllFacilities(req, res);
-    } else if (path === '/api/facilities/sports' && req.method === 'GET') {
+    } else if (isSportsRoute && req.method === 'GET') {
+      console.log('Matching: /api/facilities/sports GET');
       await getSportTypes(req, res);
-    } else if (path.match(/^\/api\/facilities\/([^\/?]+)$/)) {
+    } else if (isFacilityById && req.method === 'GET') {
+      console.log('Matching: /api/facilities/:id GET');
       const id = path.split('/')[3];
       req.params = { id };
       req.query = query;
       await getFacilityById(req, res);
-    } else if (path.match(/^\/api\/facilities\/([^\/?]+)\/availability$/)) {
+    } else if (isAvailability && req.method === 'GET') {
+      console.log('Matching: /api/facilities/:id/availability GET');
       const id = path.split('/')[3];
       req.params = { id };
       req.query = query;
       await getFacilityAvailability(req, res);
     } else {
-      console.log('No route matched for path:', path);
-      res.status(404).json({ message: 'Route not found' });
+      console.log('No route matched');
+      res.status(404).json({ message: 'Route not found', path, method: req.method });
     }
   } catch (error) {
     console.error('Facilities error:', error.message);
